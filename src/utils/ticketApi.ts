@@ -26,7 +26,7 @@ export const createTicket = async (data: Partial<Ticket>): Promise<Ticket> => {
 
 export const updateTicket = async (id: string, data: Partial<Ticket>): Promise<Ticket> => {
   const response = await fetch(`${BASE_API}/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });

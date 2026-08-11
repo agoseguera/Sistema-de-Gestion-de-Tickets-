@@ -11,7 +11,7 @@ function normalizarEmail(nombre: string, dominio: string): string {
     .concat(`@${dominio}`);
 }
 
-async function upsertPorNombre(
+export async function upsertPorNombre(
   modelo: 'prioridades' | 'estado_ticket' | 'categorias',
   nombre: string
 ) {
@@ -24,7 +24,7 @@ async function upsertPorNombre(
   return prisma.categorias.upsert({ where: { nombre }, update: {}, create: { nombre } });
 }
 
-async function findOrCreateSolicitante(nombre: string | undefined, email: string | undefined) {
+export async function findOrCreateSolicitante(nombre: string | undefined, email: string | undefined) {
   const nombreLimpio = nombre?.trim();
   const emailLimpio = email?.trim();
 
@@ -44,7 +44,7 @@ async function findOrCreateSolicitante(nombre: string | undefined, email: string
   });
 }
 
-async function findOrCreateResponsable(nombre: string | undefined) {
+export async function findOrCreateResponsable(nombre: string | undefined) {
   const nombreLimpio = nombre?.trim();
   if (!nombreLimpio || nombreLimpio === 'Sin asignar') return null;
 
