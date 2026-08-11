@@ -39,6 +39,22 @@ model prioridades {
   tickets ticket[]
 }
 
+model categorias {
+  id      Int      @id @default(autoincrement())
+  nombre  String   @unique
+  tickets ticket[]
+}
+
+model comentarios {
+  id             Int      @id @default(autoincrement())
+  texto          String
+  autor          String
+  id_ticket      Int
+  fecha_creacion DateTime @default(now())
+
+  ticket ticket @relation(fields: [id_ticket], references: [id])
+}
+
 model ticket {
   id                 Int      @id @default(autoincrement())
   numero             Int      @unique
@@ -48,11 +64,14 @@ model ticket {
   id_estado          Int
   id_solicitante     Int
   id_responsable     Int?
+  id_categoria       Int
   fecha_creacion     DateTime @default(now())
   fecha_modificacion DateTime @default(now()) @updatedAt
 
   prioridad   prioridades   @relation(fields: [id_prioridad], references: [id])
   estado      estado_ticket @relation(fields: [id_estado], references: [id])
+  categoria   categorias    @relation(fields: [id_categoria], references: [id])
   solicitante usuarios      @relation("Solicitante", fields: [id_solicitante], references: [id])
   responsable usuarios?     @relation("Responsable", fields: [id_responsable], references: [id])
+  comentarios comentarios[]
 }

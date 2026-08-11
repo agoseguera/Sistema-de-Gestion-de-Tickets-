@@ -33,7 +33,7 @@ export async function getAllTickets(): Promise<Ticket[]> {
 export async function getNextTicketId(tickets: Ticket[]): Promise<string> {
   let maxId = 1000;
   tickets.forEach((ticket) => {
-    const numPart = parseInt(ticket.id.replace('TK-', ''), 10);
+    const numPart = parseInt(String(ticket.id).replace('TK-', ''), 10);
     if (!isNaN(numPart) && numPart > maxId) {
       maxId = numPart;
     }
