@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+model usuarios {
+  id             Int      @id @default(autoincrement())
+  nombre         String
+  email          String   @unique
+  rol            String
+  fecha_creacion DateTime @default(now())
+
+  tickets_solicitante  ticket[] @relation("Solicitante")
+  tickets_responsable  ticket[] @relation("Responsable")
+}
+
+model estado_ticket {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  tickets ticket[]
+}
+
+model prioridades {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  tickets ticket[]
+}
+
+model ticket {
+  id                 Int      @id @default(autoincrement())
+  numero             Int      @unique
+  titulo             String
+  descripcion        String
+  id_prioridad       Int
+  id_estado          Int
+  id_solicitante     Int
+  id_responsable     Int?
+  fecha_creacion     DateTime @default(now())
+  fecha_modificacion DateTime @default(now()) @updatedAt
+
+  prioridad   prioridades   @relation(fields: [id_prioridad], references: [id])
+  estado      estado_ticket @relation(fields: [id_estado], references: [id])
+  solicitante usuarios      @relation("Solicitante", fields: [id_solicitante], references: [id])
+  responsable usuarios?     @relation("Responsable", fields: [id_responsable], references: [id])
+}
