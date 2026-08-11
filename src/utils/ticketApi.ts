@@ -46,7 +46,7 @@ export const resetTickets = async (): Promise<Ticket[]> => {
 export const generateNextTicketId = (tickets: Ticket[]): string => {
   let maxId = 1000;
   tickets.forEach((ticket) => {
-    const numPart = parseInt(ticket.id.replace('TK-', ''), 10);
+    const numPart = parseInt(String(ticket.id).replace('TK-', ''), 10);
     if (!isNaN(numPart) && numPart > maxId) {
       maxId = numPart;
     }
