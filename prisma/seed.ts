@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import bcrypt from 'bcryptjs';
 import { PrismaClient, prioridades, estado_ticket, categorias, usuarios } from '../src/generated/prisma/client';
 
 const prisma = new PrismaClient();
@@ -39,8 +40,9 @@ async function main() {
     { nombre: 'David Torres', email: 'david.torres@soporte.com', rol: 'Soporte' },
     { nombre: 'Laura Morales', email: 'laura.morales@empresa.com', rol: 'Solicitante' }
   ];
+  const passwordHash = await bcrypt.hash('HelpDesk2026!', 10);
   for (const datos of datosUsuarios) {
-    usuariosCreados.push(await prisma.usuarios.create({ data: datos }));
+    usuariosCreados.push(await prisma.usuarios.create({ data: { ...datos, password: passwordHash } }));
   }
 
   const idPrioridad = (nombre: string) => prioridadesCreadas.find((p) => p.nombre === nombre)!.id;

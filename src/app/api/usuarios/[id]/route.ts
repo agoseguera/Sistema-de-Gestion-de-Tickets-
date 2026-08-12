@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { toFrontendUsuario } from '@/lib/usuario-mapper';
 
@@ -23,7 +24,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    const data: { nombre?: string; email?: string; rol?: string } = {};
+    const data: { nombre?: string; email?: string; rol?: string; password?: string } = {};
 
     if (body.nombre !== undefined) {
       const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : '';
@@ -53,6 +54,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: 'El rol no puede estar vacío' }, { status: 400 });
       }
       data.rol = rol;
+    }
+
+    if (body.password !== undefined) {
+      const password = typeof body.password === 'string' ? body.password : '';
+      if (!password) {
+        return NextResponse.json({ error: 'La contraseña no puede estar vacía' }, { status: 400 });
+      }
+      if (password.length < 6) {
+        return NextResponse.json(
+          { error: 'La contraseña debe tener al menos 6 caracteres' },
+          { status: 400 }
+        );
+      }
+      data.password = await bcrypt.hash(password, 10);
     }
 
     const actualizado = await prisma.usuarios.update({

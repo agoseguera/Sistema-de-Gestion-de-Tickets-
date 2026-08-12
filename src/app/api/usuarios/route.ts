@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { toFrontendUsuario } from '@/lib/usuario-mapper';
 
@@ -31,10 +32,18 @@ export async function POST(request: NextRequest) {
     const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const rol = typeof body.rol === 'string' ? body.rol.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
 
-    if (!nombre || !email || !rol) {
+    if (!nombre || !email || !rol || !password) {
       return NextResponse.json(
-        { error: 'Nombre, email y rol son requeridos' },
+        { error: 'Nombre, email, rol y password son requeridos' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'La contraseña debe tener al menos 6 caracteres' },
         { status: 400 }
       );
     }
@@ -44,8 +53,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
     }
 
+    const passwordHash = await bcrypt.hash(password, 10);
+
     const creado = await prisma.usuarios.create({
-      data: { nombre, email, rol },
+      data: { nombre, email, rol, password: passwordHash },
       include: {
         _count: {
           select: {

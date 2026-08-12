@@ -19,6 +19,7 @@ model usuarios {
   nombre         String
   email          String   @unique
   rol            String
+  password       String?
   fecha_creacion DateTime @default(now())
   activo         Boolean  @default(true)
 
