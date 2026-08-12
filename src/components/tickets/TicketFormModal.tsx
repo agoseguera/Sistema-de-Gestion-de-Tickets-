@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, Prioridad, Estado, Categoria } from '../../types/ticket';
 import { X, Check, AlertCircle, Sparkles, User, Tag, FileText, Calendar, ShieldAlert } from 'lucide-react';
 
+const ORDEN_ESTADOS: Estado[] = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado'];
+
 interface UsuarioRegistrado {
   nombre: string;
   email: string;
@@ -77,6 +79,10 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
   const soporteUsuarios = usuarios.filter(
     (u) => u.rol.trim().toLowerCase() === 'soporte'
   );
+
+  // Al editar, solo se permite avanzar al siguiente estado (nunca regresar)
+  const indiceActual = ORDEN_ESTADOS.indexOf(status);
+  const estadosPermitidos = ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2);
 
   if (!isOpen) return null;
 
@@ -288,10 +294,11 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
                   onChange={(e) => setStatus(e.target.value as Estado)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium"
                 >
-                  <option value="Abierto">Abierto</option>
-                  <option value="En progreso">En progreso</option>
-                  <option value="Resuelto">Resuelto</option>
-                  <option value="Cerrado">Cerrado</option>
+                  {estadosPermitidos.map((estado) => (
+                    <option key={estado} value={estado}>
+                      {estado}
+                    </option>
+                  ))}
                 </select>
               ) : (
                 <select

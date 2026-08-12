@@ -26,6 +26,8 @@ interface ModalDetalleTicketProps {
   onClose: () => void;
 }
 
+const ORDEN_ESTADOS: Estado[] = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado'];
+
 export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
   isOpen,
   ticket,
@@ -38,6 +40,10 @@ export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
   const [newComment, setNewComment] = useState('');
 
   if (!isOpen || !ticket) return null;
+
+  // Solo se permite avanzar al siguiente estado (nunca regresar)
+  const indiceActual = ORDEN_ESTADOS.indexOf(ticket.estado);
+  const estadosPermitidos = ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2);
 
   const formatDate = (dateString: string) => {
     try {
@@ -178,11 +184,17 @@ export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
               onChange={(e) => onStatusChange(ticket.id, e.target.value as Estado)}
               className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold border border-slate-300 dark:border-slate-700 focus:border-indigo-500 outline-none"
             >
-              <option value="Abierto">Abierto</option>
-              <option value="En progreso">En progreso</option>
-              <option value="Resuelto">Resuelto</option>
-              <option value="Cerrado">Cerrado</option>
+              {estadosPermitidos.map((estado) => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
             </select>
+            {estadosPermitidos.length === 1 && (
+              <p className="text-[10px] text-slate-400 mt-1">
+                Estado terminal: no se puede retroceder.
+              </p>
+            )}
           </div>
         </div>
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Ticket } from '@/types/ticket';
 import { prisma } from '@/lib/prisma';
 import { toFrontendTicket } from '@/lib/ticket-mapper';
-import { upsertPorNombre, validarSolicitante, findOrCreateResponsable, TicketValidationError } from '@/lib/tickets-db';
+import { upsertPorNombre, validarSolicitante, findOrCreateResponsable, validarTransicionEstado, TicketValidationError } from '@/lib/tickets-db';
 import { Prisma } from '@/generated/prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const body = (await request.json()) as Partial<Ticket>;
 
-    const existente = await prisma.ticket.findUnique({ where: { numero } });
+    const existente = await prisma.ticket.findUnique({
+      where: { numero },
+      include: { estado: true }
+    });
     if (!existente) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
@@ -36,6 +39,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       data.id_prioridad = prioridad.id;
     }
     if (body.estado !== undefined) {
+      validarTransicionEstado(existente.estado.nombre, body.estado);
       const estado = await upsertPorNombre('estado_ticket', body.estado);
       data.id_estado = estado.id;
     }

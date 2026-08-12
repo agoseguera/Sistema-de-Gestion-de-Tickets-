@@ -9,6 +9,27 @@ export class TicketValidationError extends Error {
   }
 }
 
+export const ORDEN_ESTADOS = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado'];
+
+export function validarTransicionEstado(actual: string, nuevo: string) {
+  const indiceActual = ORDEN_ESTADOS.indexOf(actual);
+  const indiceNuevo = ORDEN_ESTADOS.indexOf(nuevo);
+
+  if (indiceActual === -1 || indiceNuevo === -1) return;
+
+  if (indiceNuevo < indiceActual) {
+    throw new TicketValidationError(
+      `No se puede cambiar el estado de "${actual}" a "${nuevo}". Los estados solo avanzan en orden: Abierto → En progreso → Resuelto → Cerrado.`
+    );
+  }
+
+  if (indiceNuevo > indiceActual + 1) {
+    throw new TicketValidationError(
+      `No se puede pasar de "${actual}" a "${nuevo}". Para llegar a "${nuevo}" el ticket debe estar primero en "${ORDEN_ESTADOS[indiceActual + 1]}".`
+    );
+  }
+}
+
 function normalizarEmail(nombre: string, dominio: string): string {
   return nombre
     .toLowerCase()
