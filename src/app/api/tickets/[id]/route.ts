@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Ticket } from '@/types/ticket';
-import { updateTicket, deleteTicket } from '@/lib/tickets-store';
+import { updateTicket } from '@/lib/tickets-store';
 import { prisma } from '@/lib/prisma';
 import { toFrontendTicket } from '@/lib/ticket-mapper';
 import { upsertPorNombre, findOrCreateSolicitante, findOrCreateResponsable } from '@/lib/tickets-db';
@@ -101,8 +101,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const ticket = await prisma.ticket.findUnique({
-      where: { numero },
+    const ticket = await prisma.ticket.findFirst({
+      where: { numero, activo: true },
       include: {
         prioridad: true,
         estado: true,
@@ -137,11 +137,24 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const deleted = await deleteTicket(id);
+  const numero = parseInt(id.replace('TK-', ''), 10);
 
-  if (!deleted) {
+  if (isNaN(numero)) {
     return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
   }
 
-  return NextResponse.json({ success: true });
+  try {
+    const result = await prisma.ticket.updateMany({
+      where: { numero, activo: true },
+      data: { activo: false }
+    });
+
+    if (result.count === 0) {
+      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Error al eliminar el ticket' }, { status: 500 });
+  }
 }

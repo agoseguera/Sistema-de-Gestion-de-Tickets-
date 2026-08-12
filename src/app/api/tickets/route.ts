@@ -10,6 +10,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     const tickets = await prisma.ticket.findMany({
+      where: { activo: true },
       include: {
         prioridad: true,
         estado: true,
