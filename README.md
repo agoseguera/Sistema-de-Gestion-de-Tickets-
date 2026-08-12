@@ -50,18 +50,19 @@ DATABASE_URL="mysql://usuario:contraseña@localhost:3306/helpdesk"
 
 ### Configurar la base de datos
 
-Ejecutar las migraciones de Prisma:
+Generar el cliente de Prisma:
+npx prisma generate
 
+Ejecutar las migraciones de Prisma:
 npx prisma migrate dev
 
-Cargar los datos de prueba:
+Importar la base de datos con datos de prueba:
+mysql -u root -p helpdesk < database/helpdesk.sql 
 
-npx prisma db seed
 ## Ejecutar el proyecto
 npm run dev
 
 La aplicación estará disponible en:
-
 http://localhost:3000
 
 ## Arquitectura
