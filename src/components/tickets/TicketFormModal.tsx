@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, Prioridad, Estado, Categoria } from '../../types/ticket';
 import { X, Check, AlertCircle, Sparkles, User, Tag, FileText, Calendar, ShieldAlert } from 'lucide-react';
 
-const ORDEN_ESTADOS: Estado[] = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado'];
+const ORDEN_ESTADOS: Estado[] = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado', 'Inválido'];
 
 interface UsuarioRegistrado {
   nombre: string;
@@ -16,6 +16,7 @@ interface ModalFormularioTicketProps {
   nextId: string;
   onSave: (ticketData: Omit<Ticket, 'fechaCreacion' | 'fechaActualizacion'>) => void;
   onClose: () => void;
+  usuarioSolicitante?: { nombre: string; email: string } | null;
 }
 
 export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
@@ -23,9 +24,11 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
   ticketToEdit,
   nextId,
   onSave,
-  onClose
+  onClose,
+  usuarioSolicitante
 }) => {
   const isEditing = !!ticketToEdit;
+  const modoSolicitante = !isEditing && !!usuarioSolicitante;
 
   // Estado del formulario
   const [id, setId] = useState<string>('');
@@ -69,12 +72,12 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
       setPriority('Media');
       setStatus('Abierto');
       setCategory('General');
-      setRequesterName('');
-      setRequesterEmail('');
+      setRequesterName(usuarioSolicitante?.nombre ?? '');
+      setRequesterEmail(usuarioSolicitante?.email ?? '');
       setAssignedName('Sin asignar');
     }
     setErrors({});
-  }, [ticketToEdit, nextId, isOpen]);
+  }, [ticketToEdit, nextId, isOpen, usuarioSolicitante]);
 
   const soporteUsuarios = usuarios.filter(
     (u) => u.rol.trim().toLowerCase() === 'soporte'
@@ -82,7 +85,9 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
 
   // Al editar, solo se permite avanzar al siguiente estado (nunca regresar)
   const indiceActual = ORDEN_ESTADOS.indexOf(status);
-  const estadosPermitidos = ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2);
+  const estadosPermitidos = status === 'Inválido'
+    ? ['Inválido' as Estado]
+    : Array.from(new Set([...ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2), 'Inválido' as Estado]));
 
   // Lista de solicitantes: usuarios activos + el actual del ticket si ya no está activo
   const solicitantesSeleccion = (() => {
@@ -134,7 +139,7 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
     }
 
     // Solo al crear se valida que el solicitante exista en la tabla de usuarios
-    if (!isEditing) {
+    if (!isEditing && !modoSolicitante) {
       const usuario = usuarios.find(
         (u) => u.email.trim().toLowerCase() === requesterEmail.trim().toLowerCase()
       );
@@ -169,7 +174,9 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
       categoria: category,
       nombreSolicitante: requesterName.trim(),
       emailSolicitante: requesterEmail.trim(),
-      nombreAsignado: assignedName.trim() || 'Sin asignar'
+      ...(modoSolicitante
+        ? {}
+        : { nombreAsignado: assignedName.trim() || 'Sin asignar' })
     });
   };
 
@@ -335,7 +342,28 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
           </div>
 
           {/* Fila 5: Solicitante (Nombre y Correo) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {modoSolicitante ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
+              <div>
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Usuario Solicitante
+                </span>
+                <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <User className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span className="truncate">{requesterName}</span>
+                </p>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Correo Electrónico
+                </span>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                  {requesterEmail}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
                 Usuario Solicitante <span className="text-red-500">*</span>
@@ -406,30 +434,33 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
               )}
             </div>
           </div>
+          )}
 
           {/* Fila 6: Responsable (Opcional) */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-              Técnico Responsable (Opcional)
-            </label>
-            <select
-              value={assignedName}
-              onChange={(e) => setAssignedName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-            >
-              <option value="Sin asignar">Sin asignar</option>
-              {soporteUsuarios.map((usuario) => (
-                <option key={usuario.email} value={usuario.nombre}>
-                  {usuario.nombre} ({usuario.email})
-                </option>
-              ))}
-              {assignedName &&
-                assignedName !== 'Sin asignar' &&
-                !soporteUsuarios.some((u) => u.nombre === assignedName) && (
-                  <option value={assignedName}>{assignedName}</option>
-                )}
-            </select>
-          </div>
+          {!modoSolicitante && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Técnico Responsable (Opcional)
+              </label>
+              <select
+                value={assignedName}
+                onChange={(e) => setAssignedName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+              >
+                <option value="Sin asignar">Sin asignar</option>
+                {soporteUsuarios.map((usuario) => (
+                  <option key={usuario.email} value={usuario.nombre}>
+                    {usuario.nombre} ({usuario.email})
+                  </option>
+                ))}
+                {assignedName &&
+                  assignedName !== 'Sin asignar' &&
+                  !soporteUsuarios.some((u) => u.nombre === assignedName) && (
+                    <option value={assignedName}>{assignedName}</option>
+                  )}
+              </select>
+            </div>
+          )}
 
           {/* Botones de acción */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">

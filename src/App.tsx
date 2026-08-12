@@ -195,8 +195,12 @@ export default function App() {
           'Los cambios en la solicitud han sido guardados correctamente.'
         );
       } else {
-        // Crear ticket nuevo
-        const newTicket = await createTicket(ticketData);
+        // Crear ticket nuevo (un solicitante se registra como autor de su propia solicitud)
+        const datos = esSolicitante && usuario
+          ? { ...ticketData, nombreSolicitante: usuario.nombre, emailSolicitante: usuario.email, nombreAsignado: undefined }
+          : ticketData;
+
+        const newTicket = await createTicket(datos);
         setTickets((prev) => [newTicket, ...prev]);
 
         addToast(
@@ -349,6 +353,19 @@ export default function App() {
   // Calcular conteos de tickets
   const openCount = tickets.filter((ticket) => ticket.estado === 'Abierto' || ticket.estado === 'En progreso').length;
 
+  // Datos y permisos según el rol del usuario conectado
+  const esSolicitante = (usuario?.rol ?? '').trim().toLowerCase() === 'solicitante';
+  const esAdmin = (usuario?.rol ?? '').trim().toLowerCase() === 'administrador';
+  const misTickets = usuario
+    ? tickets.filter(
+        (ticket) => ticket.emailSolicitante.toLowerCase() === usuario.email.toLowerCase()
+      )
+    : [];
+  const vistasPermitidasUsuario = vistasPermitidas(usuario?.rol);
+  const vistaActual: VistaActiva = vistasPermitidasUsuario.includes(currentView)
+    ? currentView
+    : vistasPermitidasUsuario[0];
+
   // Pantalla de carga mientras se restaura la sesión
   if (!sesionRestaurada) {
     return (
@@ -374,14 +391,15 @@ export default function App() {
 
       {/* Navegación lateral */}
       <BarraLateral
-        currentView={currentView}
+        currentView={vistaActual}
         onNavigate={(view) => {
-          const vistaSegura = vistasPermitidas(usuario?.rol).includes(view) ? view : 'dashboard';
-          setCurrentView(vistaSegura);
+          setCurrentView(view);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        openTicketCount={openCount}
-        totalTicketCount={tickets.length}
+        openTicketCount={esSolicitante
+          ? misTickets.filter((t) => t.estado === 'Abierto' || t.estado === 'En progreso').length
+          : openCount}
+        totalTicketCount={esSolicitante ? misTickets.length : tickets.length}
         onNewTicket={handleOpenCreateModal}
         isMobileMenuOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -393,24 +411,24 @@ export default function App() {
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0 min-h-screen">
         {/* Cabecera superior */}
         <Cabecera
-          currentView={currentView}
+          currentView={vistaActual}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onNewTicket={handleOpenCreateModal}
           searchQuery={globalSearchQuery}
           onSearchChange={(query) => {
             setGlobalSearchQuery(query);
-            if (query && currentView !== 'tickets') {
-              setCurrentView('tickets');
+            if (query && currentView !== vistaActual) {
+              setCurrentView(esSolicitante ? 'misTickets' : 'tickets');
             }
           }}
-          totalTicketCount={tickets.length}
+          totalTicketCount={esSolicitante ? misTickets.length : tickets.length}
           usuario={usuario}
           onLogout={handleLogout}
         />
 
         {/* Cuerpo de la vista dinámica */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {currentView === 'dashboard' ? (
+          {vistaActual === 'dashboard' ? (
             <VistaPanel
               tickets={tickets}
               usuario={usuario}
@@ -421,13 +439,25 @@ export default function App() {
               onSelectTicket={handleOpenDetail}
               onNewTicket={handleOpenCreateModal}
             />
-          ) : currentView === 'usuarios' ? (
+          ) : vistaActual === 'usuarios' ? (
             <VistaListaUsuarios
               usuarios={usuarios}
               onNewUsuario={handleOpenCreateUsuarioModal}
               onEditUsuario={handleOpenEditUsuarioModal}
               onDeleteUsuario={handleOpenDeleteUsuario}
               initialSearchQuery={globalSearchQuery}
+            />
+          ) : vistaActual === 'misTickets' ? (
+            <VistaListaTickets
+              tickets={misTickets}
+              onNewTicket={handleOpenCreateModal}
+              onViewTicket={handleOpenDetail}
+              onEditTicket={handleOpenEditModal}
+              onDeleteTicket={handleOpenDelete}
+              initialSearchQuery={globalSearchQuery}
+              esSolicitante
+              titulo="Mis Tickets"
+              subtitulo="Consulta el estado de tus solicitudes, da seguimiento a los comentarios y registra nuevos tickets."
             />
           ) : (
             <VistaListaTickets
@@ -437,6 +467,8 @@ export default function App() {
               onEditTicket={handleOpenEditModal}
               onDeleteTicket={handleOpenDelete}
               initialSearchQuery={globalSearchQuery}
+              esSolicitante={esSolicitante}
+              puedeEliminar={esAdmin}
             />
           )}
         </main>
@@ -452,6 +484,7 @@ export default function App() {
           setIsFormOpen(false);
           setTicketToEdit(null);
         }}
+        usuarioSolicitante={esSolicitante ? { nombre: usuario.nombre, email: usuario.email } : null}
       />
 
       <ModalDetalleTicket
@@ -465,6 +498,8 @@ export default function App() {
           setIsDetailOpen(false);
           setSelectedTicket(null);
         }}
+        esSolicitante={esSolicitante}
+        puedeEliminar={esAdmin}
       />
 
       <ModalConfirmacion

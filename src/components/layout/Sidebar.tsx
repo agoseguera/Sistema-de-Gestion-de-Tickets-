@@ -2,12 +2,12 @@ import React from 'react';
 import { Home, Ticket, Users, LifeBuoy, CheckCircle2, AlertCircle, PlusCircle, Headphones, ChevronRight, X, LogOut } from 'lucide-react';
 import { Usuario } from '../../types/usuario';
 
-export type VistaActiva = 'dashboard' | 'tickets' | 'usuarios';
+export type VistaActiva = 'dashboard' | 'tickets' | 'misTickets' | 'usuarios';
 
 export const VISTAS_POR_ROL: Record<string, VistaActiva[]> = {
   administrador: ['dashboard', 'tickets', 'usuarios'],
   soporte: ['dashboard', 'tickets'],
-  solicitante: ['dashboard', 'tickets']
+  solicitante: ['misTickets']
 };
 
 export function vistasPermitidas(rol?: string): VistaActiva[] {
@@ -61,6 +61,12 @@ export const BarraLateral: React.FC<BarraLateralProps> = ({
     {
       id: 'tickets',
       label: 'Tickets',
+      icon: Ticket,
+      badge: openTicketCount > 0 ? openTicketCount : null
+    },
+    {
+      id: 'misTickets',
+      label: 'Mis Tickets',
       icon: Ticket,
       badge: openTicketCount > 0 ? openTicketCount : null
     },

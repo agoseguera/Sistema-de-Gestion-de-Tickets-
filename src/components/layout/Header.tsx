@@ -17,6 +17,7 @@ interface CabeceraProps {
 const ETIQUETAS_VISTA: Record<VistaActiva, { modulo: string; titulo: string }> = {
   dashboard: { modulo: 'Panel de Control', titulo: 'Inicio & Resumen' },
   tickets: { modulo: 'Módulo de Tickets', titulo: 'Gestión de Solicitudes' },
+  misTickets: { modulo: 'Módulo de Tickets', titulo: 'Mis Solicitudes' },
   usuarios: { modulo: 'Módulo de Usuarios', titulo: 'Administración de Usuarios' }
 };
 
