@@ -1,9 +1,11 @@
 import React from 'react';
-import { Home, Ticket, LifeBuoy, CheckCircle2, AlertCircle, PlusCircle, Headphones, ChevronRight, X } from 'lucide-react';
+import { Home, Ticket, Users, LifeBuoy, CheckCircle2, AlertCircle, PlusCircle, Headphones, ChevronRight, X } from 'lucide-react';
+
+export type VistaActiva = 'dashboard' | 'tickets' | 'usuarios';
 
 interface BarraLateralProps {
-  currentView: 'dashboard' | 'tickets';
-  onNavigate: (view: 'dashboard' | 'tickets') => void;
+  currentView: VistaActiva;
+  onNavigate: (view: VistaActiva) => void;
   openTicketCount: number;
   totalTicketCount: number;
   onNewTicket: () => void;
@@ -32,6 +34,12 @@ export const BarraLateral: React.FC<BarraLateralProps> = ({
       label: 'Tickets',
       icon: Ticket,
       badge: openTicketCount > 0 ? openTicketCount : null
+    },
+    {
+      id: 'usuarios',
+      label: 'Usuarios',
+      icon: Users,
+      badge: null
     }
   ];
 
@@ -96,7 +104,7 @@ export const BarraLateral: React.FC<BarraLateralProps> = ({
               <button
                 key={item.id}
                 onClick={() => {
-                  onNavigate(item.id as 'dashboard' | 'tickets');
+                  onNavigate(item.id as VistaActiva);
                   if (isMobileMenuOpen) onCloseMobile();
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${

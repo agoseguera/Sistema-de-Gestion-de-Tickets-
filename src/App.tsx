@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Ticket, Estado, Notificacion } from './types/ticket';
+import { Usuario } from './types/usuario';
 import {
   fetchTickets,
   createTicket,
@@ -9,22 +10,26 @@ import {
   deleteTicket,
   generateNextTicketId
 } from './utils/ticketApi';
-import { BarraLateral } from './components/layout/Sidebar';
+import { fetchUsuarios, createUsuario, updateUsuario, deleteUsuario } from './utils/usuarioApi';
+import { BarraLateral, VistaActiva } from './components/layout/Sidebar';
 import { Cabecera } from './components/layout/Header';
 import { VistaPanel } from './components/dashboard/DashboardView';
 import { VistaListaTickets } from './components/tickets/TicketListView';
 import { ModalFormularioTicket } from './components/tickets/TicketFormModal';
 import { ModalDetalleTicket } from './components/tickets/TicketDetailModal';
+import { VistaListaUsuarios } from './components/usuarios/VistaListaUsuarios';
+import { ModalFormularioUsuario } from './components/usuarios/ModalFormularioUsuario';
 import { ModalConfirmacion } from './components/common/ConfirmModal';
 import { ContenedorNotificaciones } from './components/common/Toast';
 
 export default function App() {
   // Estado de datos de la aplicación
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Estado de la vista activa
-  const [currentView, setCurrentView] = useState<'dashboard' | 'tickets'>('dashboard');
+  const [currentView, setCurrentView] = useState<VistaActiva>('dashboard');
 
   // Estado de búsqueda y filtros
   const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
@@ -41,6 +46,13 @@ export default function App() {
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
+
+  // Estado de los modales de usuario
+  const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState<boolean>(false);
+  const [usuarioToEdit, setUsuarioToEdit] = useState<Usuario | null>(null);
+
+  const [isUsuarioDeleteConfirmOpen, setIsUsuarioDeleteConfirmOpen] = useState<boolean>(false);
+  const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null);
 
   // Estado de las notificaciones (toasts)
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
@@ -59,15 +71,29 @@ export default function App() {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 
-  // Carga los tickets desde la API al montar el componente
+  // Carga los tickets y usuarios desde la API al montar el componente
   useEffect(() => {
     fetchTickets()
       .then((data) => setTickets(data))
       .catch((error: unknown) => {
         addToast('error', 'Error al cargar tickets', getErrorMessage(error));
+      });
+
+    fetchUsuarios()
+      .then((data) => setUsuarios(data))
+      .catch((error: unknown) => {
+        addToast('error', 'Error al cargar usuarios', getErrorMessage(error));
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  // Refresca la lista de usuarios al entrar a la vista de usuarios
+  useEffect(() => {
+    if (currentView !== 'usuarios') return;
+    fetchUsuarios()
+      .then((data) => setUsuarios(data))
+      .catch(() => {});
+  }, [currentView]);
 
   const getErrorMessage = (error: unknown): string =>
     error instanceof Error ? error.message : 'Error desconocido';
@@ -153,6 +179,75 @@ export default function App() {
 
     setIsDeleteConfirmOpen(false);
     setTicketToDelete(null);
+  };
+
+  // Abrir formulario de creación de usuario
+  const handleOpenCreateUsuarioModal = () => {
+    setUsuarioToEdit(null);
+    setIsUsuarioFormOpen(true);
+  };
+
+  // Abrir formulario de edición de usuario
+  const handleOpenEditUsuarioModal = (usuario: Usuario) => {
+    setUsuarioToEdit(usuario);
+    setIsUsuarioFormOpen(true);
+  };
+
+  // Guardar usuario (crear o editar)
+  const handleSaveUsuario = async (data: {
+    nombre: string;
+    email: string;
+    rol: string;
+    password?: string;
+  }) => {
+    try {
+      if (usuarioToEdit) {
+        const updated = await updateUsuario(usuarioToEdit.id, data);
+        setUsuarios((prev) =>
+          prev.map((usuario) => (usuario.id === updated.id ? updated : usuario))
+        );
+        addToast('success', 'Usuario actualizado', 'Los datos del usuario han sido guardados correctamente.');
+      } else {
+        const nuevo = await createUsuario({
+          ...data,
+          password: data.password ?? ''
+        });
+        setUsuarios((prev) => [...prev, nuevo]);
+        addToast('success', 'Usuario creado', 'El usuario ha sido registrado exitosamente en la plataforma.');
+      }
+
+      setIsUsuarioFormOpen(false);
+      setUsuarioToEdit(null);
+    } catch (error: unknown) {
+      addToast('error', 'Error al guardar usuario', getErrorMessage(error));
+    }
+  };
+
+  // Abrir modal de confirmación de eliminación de usuario
+  const handleOpenDeleteUsuario = (usuario: Usuario) => {
+    setUsuarioToDelete(usuario);
+    setIsUsuarioDeleteConfirmOpen(true);
+  };
+
+  // Confirmar eliminación de usuario (desactivación)
+  const handleConfirmDeleteUsuario = async () => {
+    if (!usuarioToDelete) return;
+
+    try {
+      await deleteUsuario(usuarioToDelete.id);
+      setUsuarios((prev) => prev.filter((usuario) => usuario.id !== usuarioToDelete.id));
+
+      addToast(
+        'success',
+        `Usuario ${usuarioToDelete.nombre} eliminado`,
+        'El usuario ha sido desactivado del sistema.'
+      );
+    } catch (error: unknown) {
+      addToast('error', 'Error al eliminar usuario', getErrorMessage(error));
+    }
+
+    setIsUsuarioDeleteConfirmOpen(false);
+    setUsuarioToDelete(null);
   };
 
   // Cambio directo de estado
@@ -253,6 +348,14 @@ export default function App() {
               onSelectTicket={handleOpenDetail}
               onNewTicket={handleOpenCreateModal}
             />
+          ) : currentView === 'usuarios' ? (
+            <VistaListaUsuarios
+              usuarios={usuarios}
+              onNewUsuario={handleOpenCreateUsuarioModal}
+              onEditUsuario={handleOpenEditUsuarioModal}
+              onDeleteUsuario={handleOpenDeleteUsuario}
+              initialSearchQuery={globalSearchQuery}
+            />
           ) : (
             <VistaListaTickets
               tickets={tickets}
@@ -299,6 +402,30 @@ export default function App() {
         onCancel={() => {
           setIsDeleteConfirmOpen(false);
           setTicketToDelete(null);
+        }}
+      />
+
+      <ModalFormularioUsuario
+        isOpen={isUsuarioFormOpen}
+        usuarioToEdit={usuarioToEdit}
+        onSave={handleSaveUsuario}
+        onClose={() => {
+          setIsUsuarioFormOpen(false);
+          setUsuarioToEdit(null);
+        }}
+      />
+
+      <ModalConfirmacion
+        isOpen={isUsuarioDeleteConfirmOpen}
+        titulo="Eliminar Usuario"
+        descripcion="Esta acción desactivará al usuario; no se eliminará de la base de datos."
+        pregunta="¿Estás seguro de que deseas eliminar este usuario?"
+        ticketId={usuarioToDelete?.id}
+        ticketTitle={usuarioToDelete?.nombre}
+        onConfirm={handleConfirmDeleteUsuario}
+        onCancel={() => {
+          setIsUsuarioDeleteConfirmOpen(false);
+          setUsuarioToDelete(null);
         }}
       />
 

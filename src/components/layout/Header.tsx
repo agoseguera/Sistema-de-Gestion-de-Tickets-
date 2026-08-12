@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { Menu, Search, Bell, Plus, Headphones, CheckCircle, Info } from 'lucide-react';
+import { VistaActiva } from './Sidebar';
 
 interface CabeceraProps {
-  currentView: 'dashboard' | 'tickets';
+  currentView: VistaActiva;
   onOpenMobileMenu: () => void;
   onNewTicket: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   totalTicketCount: number;
 }
+
+const ETIQUETAS_VISTA: Record<VistaActiva, { modulo: string; titulo: string }> = {
+  dashboard: { modulo: 'Panel de Control', titulo: 'Inicio & Resumen' },
+  tickets: { modulo: 'Módulo de Tickets', titulo: 'Gestión de Solicitudes' },
+  usuarios: { modulo: 'Módulo de Usuarios', titulo: 'Administración de Usuarios' }
+};
 
 export const Cabecera: React.FC<CabeceraProps> = ({
   currentView,
@@ -34,11 +41,11 @@ export const Cabecera: React.FC<CabeceraProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
-            {currentView === 'dashboard' ? 'Panel de Control' : 'Módulo de Tickets'}
+            {ETIQUETAS_VISTA[currentView].modulo}
           </span>
           <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">/</span>
           <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 hidden sm:block">
-            {currentView === 'dashboard' ? 'Inicio & Resumen' : 'Gestión de Solicitudes'}
+            {ETIQUETAS_VISTA[currentView].titulo}
           </h1>
         </div>
       </div>

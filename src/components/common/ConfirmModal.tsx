@@ -5,6 +5,9 @@ interface ModalConfirmacionProps {
   isOpen: boolean;
   ticketId?: string;
   ticketTitle?: string;
+  titulo?: string;
+  descripcion?: string;
+  pregunta?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -13,6 +16,9 @@ export const ModalConfirmacion: React.FC<ModalConfirmacionProps> = ({
   isOpen,
   ticketId,
   ticketTitle,
+  titulo = 'Eliminar Ticket',
+  descripcion = 'Esta acción eliminará el registro de forma permanente.',
+  pregunta = '¿Estás seguro de que deseas eliminar este ticket?',
   onConfirm,
   onCancel
 }) => {
@@ -34,17 +40,17 @@ export const ModalConfirmacion: React.FC<ModalConfirmacionProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Eliminar Ticket
+              {titulo}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Esta acción eliminará el registro de forma permanente.
+              {descripcion}
             </p>
           </div>
         </div>
 
         <div className="my-4 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
-            ¿Estás seguro de que deseas eliminar este ticket?
+            {pregunta}
           </p>
           {ticketId && (
             <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300">
