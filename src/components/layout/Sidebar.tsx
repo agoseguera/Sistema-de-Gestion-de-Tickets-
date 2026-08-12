@@ -1,5 +1,6 @@
 import React from 'react';
-import { Home, Ticket, Users, LifeBuoy, CheckCircle2, AlertCircle, PlusCircle, Headphones, ChevronRight, X } from 'lucide-react';
+import { Home, Ticket, Users, LifeBuoy, CheckCircle2, AlertCircle, PlusCircle, Headphones, ChevronRight, X, LogOut } from 'lucide-react';
+import { Usuario } from '../../types/usuario';
 
 export type VistaActiva = 'dashboard' | 'tickets' | 'usuarios';
 
@@ -11,6 +12,8 @@ interface BarraLateralProps {
   onNewTicket: () => void;
   isMobileMenuOpen: boolean;
   onCloseMobile: () => void;
+  usuario: Usuario | null;
+  onLogout: () => void;
 }
 
 export const BarraLateral: React.FC<BarraLateralProps> = ({
@@ -20,8 +23,19 @@ export const BarraLateral: React.FC<BarraLateralProps> = ({
   totalTicketCount,
   onNewTicket,
   isMobileMenuOpen,
-  onCloseMobile
+  onCloseMobile,
+  usuario,
+  onLogout
 }) => {
+  const iniciales = usuario
+    ? usuario.nombre
+        .split(' ')
+        .filter((palabra) => palabra.length > 0)
+        .slice(0, 2)
+        .map((palabra) => palabra[0])
+        .join('')
+        .toUpperCase()
+    : 'AD';
   const navItems = [
     {
       id: 'dashboard',
@@ -158,13 +172,21 @@ export const BarraLateral: React.FC<BarraLateralProps> = ({
 
         {/* Pie de usuario */}
         <div className="p-3.5 border-t border-slate-800/80 flex items-center gap-3 bg-slate-900/80 shrink-0">
-          <div className="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 font-bold flex items-center justify-center text-xs">
-            AD
+          <div className="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 font-bold flex items-center justify-center text-xs shrink-0">
+            {iniciales}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">Administrador Soporte</p>
-            <p className="text-[11px] text-slate-400 truncate">admin@helpdesk.com</p>
+            <p className="text-xs font-semibold text-white truncate">{usuario?.nombre ?? 'Administrador Soporte'}</p>
+            <p className="text-[11px] text-slate-400 truncate">{usuario?.email ?? 'admin@helpdesk.com'}</p>
           </div>
+          <button
+            onClick={onLogout}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </aside>
     </>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Menu, Search, Bell, Plus, Headphones, CheckCircle, Info } from 'lucide-react';
+import { Menu, Search, Bell, Plus, Headphones, CheckCircle, Info, LogOut } from 'lucide-react';
 import { VistaActiva } from './Sidebar';
+import { Usuario } from '../../types/usuario';
 
 interface CabeceraProps {
   currentView: VistaActiva;
@@ -9,6 +10,8 @@ interface CabeceraProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   totalTicketCount: number;
+  usuario: Usuario | null;
+  onLogout: () => void;
 }
 
 const ETIQUETAS_VISTA: Record<VistaActiva, { modulo: string; titulo: string }> = {
@@ -23,9 +26,20 @@ export const Cabecera: React.FC<CabeceraProps> = ({
   onNewTicket,
   searchQuery,
   onSearchChange,
-  totalTicketCount
+  totalTicketCount,
+  usuario,
+  onLogout
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const iniciales = usuario
+    ? usuario.nombre
+        .split(' ')
+        .filter((palabra) => palabra.length > 0)
+        .slice(0, 2)
+        .map((palabra) => palabra[0])
+        .join('')
+        .toUpperCase()
+    : 'AD';
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-colors">
@@ -101,6 +115,27 @@ export const Cabecera: React.FC<CabeceraProps> = ({
               </button>
             </div>
           )}
+        </div>
+
+        {/* Usuario de la sesión y cierre de sesión */}
+        <div className="hidden sm:flex items-center gap-2 pl-1 border-l border-slate-200 dark:border-slate-800">
+          <div className="w-8 h-8 rounded-full bg-indigo-600/15 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-xs shrink-0">
+            {iniciales}
+          </div>
+          <div className="hidden md:block min-w-0">
+            <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[10rem]">
+              {usuario?.nombre ?? 'Administrador Soporte'}
+            </p>
+            <p className="text-[10px] text-slate-400 truncate max-w-[10rem]">{usuario?.rol}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

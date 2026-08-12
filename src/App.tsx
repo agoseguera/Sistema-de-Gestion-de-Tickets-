@@ -11,6 +11,8 @@ import {
   generateNextTicketId
 } from './utils/ticketApi';
 import { fetchUsuarios, createUsuario, updateUsuario, deleteUsuario } from './utils/usuarioApi';
+import { loginUsuario } from './utils/authApi';
+import { LoginView } from './components/auth/LoginView';
 import { BarraLateral, VistaActiva } from './components/layout/Sidebar';
 import { Cabecera } from './components/layout/Header';
 import { VistaPanel } from './components/dashboard/DashboardView';
@@ -22,7 +24,25 @@ import { ModalFormularioUsuario } from './components/usuarios/ModalFormularioUsu
 import { ModalConfirmacion } from './components/common/ConfirmModal';
 import { ContenedorNotificaciones } from './components/common/Toast';
 
+const SESION_KEY = 'helpdesk_sesion';
+
+function obtenerSesionInicial(): Usuario | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(SESION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Usuario;
+    if (!parsed?.id || !parsed?.email) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
+  // Estado de la sesión
+  const [usuario, setUsuario] = useState<Usuario | null>(() => obtenerSesionInicial());
+
   // Estado de datos de la aplicación
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -71,8 +91,35 @@ export default function App() {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 
-  // Carga los tickets y usuarios desde la API al montar el componente
+  // Iniciar sesión validando correo y contraseña contra la tabla de usuarios
+  const handleLogin = async (email: string, password: string) => {
+    const autenticado = await loginUsuario(email, password);
+    setUsuario(autenticado);
+    try {
+      window.localStorage.setItem(SESION_KEY, JSON.stringify(autenticado));
+    } catch {}
+  };
+
+  // Cerrar sesión
+  const handleLogout = () => {
+    setUsuario(null);
+    setTickets([]);
+    setUsuarios([]);
+    setCurrentView('dashboard');
+    setGlobalSearchQuery('');
+    try {
+      window.localStorage.removeItem(SESION_KEY);
+    } catch {}
+  };
+
+  // Carga los tickets y usuarios desde la API al iniciar sesión
   useEffect(() => {
+    if (!usuario) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     fetchTickets()
       .then((data) => setTickets(data))
       .catch((error: unknown) => {
@@ -85,15 +132,15 @@ export default function App() {
         addToast('error', 'Error al cargar usuarios', getErrorMessage(error));
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [usuario]);
 
   // Refresca la lista de usuarios al entrar a la vista de usuarios
   useEffect(() => {
-    if (currentView !== 'usuarios') return;
+    if (currentView !== 'usuarios' || !usuario) return;
     fetchUsuarios()
       .then((data) => setUsuarios(data))
       .catch(() => {});
-  }, [currentView]);
+  }, [currentView, usuario]);
 
   const getErrorMessage = (error: unknown): string =>
     error instanceof Error ? error.message : 'Error desconocido';
@@ -296,6 +343,11 @@ export default function App() {
   // Calcular conteos de tickets
   const openCount = tickets.filter((ticket) => ticket.estado === 'Abierto' || ticket.estado === 'En progreso').length;
 
+  // Pantalla de inicio de sesión
+  if (!usuario) {
+    return <LoginView onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased flex flex-col lg:flex-row selection:bg-indigo-500 selection:text-white">
       {/* Superposición de carga */}
@@ -317,6 +369,8 @@ export default function App() {
         onNewTicket={handleOpenCreateModal}
         isMobileMenuOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
+        usuario={usuario}
+        onLogout={handleLogout}
       />
 
       {/* Área de contenido principal */}
@@ -334,6 +388,8 @@ export default function App() {
             }
           }}
           totalTicketCount={tickets.length}
+          usuario={usuario}
+          onLogout={handleLogout}
         />
 
         {/* Cuerpo de la vista dinámica */}
