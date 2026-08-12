@@ -7,7 +7,6 @@ import {
   createTicket,
   updateTicket,
   deleteTicket,
-  resetTickets,
   generateNextTicketId
 } from './utils/ticketApi';
 import { BarraLateral } from './components/layout/Sidebar';
@@ -199,18 +198,6 @@ export default function App() {
     }
   };
 
-  // Restablecer datos de demostración
-  const handleResetData = async () => {
-    try {
-      const defaultData = await resetTickets();
-      setTickets(defaultData);
-      setGlobalSearchQuery('');
-      addToast('info', 'Datos restablecidos', 'Se han restaurado los tickets de prueba por defecto.');
-    } catch (error: unknown) {
-      addToast('error', 'Error al restablecer datos', getErrorMessage(error));
-    }
-  };
-
   // Calcular conteos de tickets
   const openCount = tickets.filter((ticket) => ticket.estado === 'Abierto' || ticket.estado === 'En progreso').length;
 
@@ -244,7 +231,6 @@ export default function App() {
           currentView={currentView}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onNewTicket={handleOpenCreateModal}
-          onResetData={handleResetData}
           searchQuery={globalSearchQuery}
           onSearchChange={(query) => {
             setGlobalSearchQuery(query);

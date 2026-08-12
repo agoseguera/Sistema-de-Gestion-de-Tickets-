@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Ticket } from '@/types/ticket';
-import { updateTicket } from '@/lib/tickets-store';
 import { prisma } from '@/lib/prisma';
 import { toFrontendTicket } from '@/lib/ticket-mapper';
 import { upsertPorNombre, findOrCreateSolicitante, findOrCreateResponsable } from '@/lib/tickets-db';
@@ -121,18 +120,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   } catch (error) {
     return NextResponse.json({ error: 'Error al obtener el ticket' }, { status: 500 });
   }
-}
-
-export async function PATCH(request: NextRequest, context: RouteContext) {
-  const { id } = await context.params;
-  const body = (await request.json()) as Partial<Ticket>;
-  const ticket = await updateTicket(id, body);
-
-  if (!ticket) {
-    return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
-  }
-
-  return NextResponse.json(ticket);
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {

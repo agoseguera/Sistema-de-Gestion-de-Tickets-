@@ -38,11 +38,6 @@ export const deleteTicket = async (id: string): Promise<void> => {
   await handleResponse<{ success: boolean }>(response);
 };
 
-export const resetTickets = async (): Promise<Ticket[]> => {
-  const response = await fetch(`${BASE_API}/reset`, { method: 'POST' });
-  return handleResponse<Ticket[]>(response);
-};
-
 export const generateNextTicketId = (tickets: Ticket[]): string => {
   let maxId = 1000;
   tickets.forEach((ticket) => {

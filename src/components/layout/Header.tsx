@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Menu, Search, Bell, Plus, Headphones, RotateCcw, CheckCircle, Info } from 'lucide-react';
+import { Menu, Search, Bell, Plus, Headphones, CheckCircle, Info } from 'lucide-react';
 
 interface CabeceraProps {
   currentView: 'dashboard' | 'tickets';
   onOpenMobileMenu: () => void;
   onNewTicket: () => void;
-  onResetData: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   totalTicketCount: number;
@@ -15,7 +14,6 @@ export const Cabecera: React.FC<CabeceraProps> = ({
   currentView,
   onOpenMobileMenu,
   onNewTicket,
-  onResetData,
   searchQuery,
   onSearchChange,
   totalTicketCount
@@ -59,16 +57,6 @@ export const Cabecera: React.FC<CabeceraProps> = ({
           />
         </div>
 
-        {/* Botón de restablecer datos de prueba */}
-        <button
-          onClick={onResetData}
-          title="Restablecer datos de prueba"
-          className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-xs flex items-center gap-1.5"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span className="hidden xl:inline text-xs font-medium">Reiniciar Datos</span>
-        </button>
-
         {/* Campana de notificaciones */}
         <div className="relative">
           <button
@@ -107,15 +95,6 @@ export const Cabecera: React.FC<CabeceraProps> = ({
             </div>
           )}
         </div>
-
-        {/* Botón CTA principal */}
-        <button
-          onClick={onNewTicket}
-          className="hidden sm:flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo ticket</span>
-        </button>
       </div>
     </header>
   );
