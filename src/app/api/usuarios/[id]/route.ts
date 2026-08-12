@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { toFrontendUsuario } from '@/lib/usuario-mapper';
+import { esPasswordSegura } from '@/lib/password';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -64,6 +65,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       if (password.length < 6) {
         return NextResponse.json(
           { error: 'La contraseña debe tener al menos 6 caracteres' },
+          { status: 400 }
+        );
+      }
+      if (!esPasswordSegura(password)) {
+        return NextResponse.json(
+          {
+            error:
+              'La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un carácter especial.'
+          },
           { status: 400 }
         );
       }

@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Usuario } from '../../types/usuario';
-import { X, Check, AlertCircle, UserPlus, UserRound, KeyRound, Eye, EyeOff } from 'lucide-react';
+import {
+  X,
+  Check,
+  AlertCircle,
+  UserPlus,
+  UserRound,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Copy,
+  RefreshCw,
+  ShieldCheck
+} from 'lucide-react';
+import { generarPasswordSegura, esPasswordSegura } from '../../lib/password';
 
 interface ModalFormularioUsuarioProps {
   isOpen: boolean;
@@ -22,6 +35,7 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
   const [rol, setRol] = useState<string>('Solicitante');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -37,10 +51,35 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
       setPassword('');
     }
     setShowPassword(false);
+    setCopied(false);
     setErrors({});
   }, [usuarioToEdit, isOpen]);
 
   if (!isOpen) return null;
+
+  // Al crear un usuario con rol Administrador se genera automáticamente una contraseña segura
+  const handleRolChange = (value: string) => {
+    setRol(value);
+    if (!isEditing && value.trim().toLowerCase() === 'administrador' && !password) {
+      setPassword(generarPasswordSegura());
+    }
+    if (errors.rol) setErrors({ ...errors, rol: '' });
+  };
+
+  const handleGenerarPassword = () => {
+    setPassword(generarPasswordSegura());
+    setShowPassword(true);
+    if (errors.password) setErrors({ ...errors, password: '' });
+  };
+
+  const handleCopiarPassword = async () => {
+    if (!password) return;
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
@@ -59,14 +98,26 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
       newErrors.rol = 'El rol es obligatorio.';
     }
 
-    if (!isEditing) {
-      if (!password) {
-        newErrors.password = 'La contraseña es obligatoria.';
-      } else if (password.length < 6) {
-        newErrors.password = 'La contraseña debe tener al menos 6 caracteres.';
+    const validarFuerte = (value: string) => {
+      if (!value) {
+        return 'La contraseña es obligatoria.';
       }
+      if (value.length < 6) {
+        return 'La contraseña debe tener al menos 6 caracteres.';
+      }
+      if (!esPasswordSegura(value)) {
+        return 'La contraseña debe incluir mayúscula, minúscula, número y carácter especial.';
+      }
+      return '';
+    };
+
+    if (!isEditing) {
+      const errorPassword = validarFuerte(password);
+      if (errorPassword) newErrors.password = errorPassword;
     } else if (password && password.length < 6) {
       newErrors.password = 'La contraseña debe tener al menos 6 caracteres.';
+    } else if (password && !esPasswordSegura(password)) {
+      newErrors.password = 'La contraseña debe incluir mayúscula, minúscula, número y carácter especial.';
     }
 
     setErrors(newErrors);
@@ -172,10 +223,7 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
             </label>
             <select
               value={rol}
-              onChange={(e) => {
-                setRol(e.target.value);
-                if (errors.rol) setErrors({ ...errors, rol: '' });
-              }}
+              onChange={(e) => handleRolChange(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium"
             >
               <option value="Administrador">Administrador</option>
@@ -198,26 +246,47 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
               <KeyRound className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder={isEditing ? 'Dejar vacío para no cambiarla' : 'Mínimo 6 caracteres'}
+                placeholder={isEditing ? 'Dejar vacío para no cambiarla' : 'Generar o escribir una contraseña'}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (errors.password) setErrors({ ...errors, password: '' });
                 }}
-                className={`w-full pl-10 pr-11 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border ${
+                className={`w-full pl-10 pr-32 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border ${
                   errors.password
                     ? 'border-red-500 focus:ring-red-500/20'
                     : 'border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20'
                 } focus:ring-2 outline-none transition-all`}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((visible) => !visible)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={handleCopiarPassword}
+                  disabled={!password}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors cursor-pointer"
+                  aria-label="Copiar contraseña"
+                  title={copied ? '¡Copiada!' : 'Copiar contraseña'}
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerarPassword}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  aria-label="Generar contraseña segura"
+                  title="Generar contraseña segura"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             {errors.password ? (
               <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
@@ -225,11 +294,15 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
                 <span>{errors.password}</span>
               </p>
             ) : (
-              isEditing && (
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Deje este campo vacío si no desea cambiar la contraseña.
-                </p>
-              )
+              <p className="text-[11px] text-slate-400 mt-1 flex items-start gap-1">
+                <ShieldCheck className="w-3 h-3 shrink-0 mt-0.5 text-emerald-500" />
+                <span>
+                  {isEditing
+                    ? 'Deje el campo vacío para no cambiarla. '
+                    : 'Al seleccionar el rol Administrador se genera una contraseña segura automáticamente. '}
+                  Mínimo 6 caracteres con mayúscula, minúscula, número y carácter especial.
+                </span>
+              </p>
             )}
           </div>
 
