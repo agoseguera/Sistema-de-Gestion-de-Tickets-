@@ -39,7 +39,7 @@ export const VistaPanel: React.FC<VistaPanelProps> = ({
   const resolved = tickets.filter((ticket) => ticket.estado === 'Resuelto').length;
   const closed = tickets.filter((ticket) => ticket.estado === 'Cerrado').length;
 
-  const critical = tickets.filter((ticket) => ticket.prioridad === 'Crítica' && ticket.estado !== 'Cerrado' && ticket.estado !== 'Resuelto').length;
+  const critical = tickets.filter((ticket) => ticket.prioridad === 'Crítica' && ticket.estado !== 'Cerrado' && ticket.estado !== 'Resuelto' && ticket.estado !== 'Inválido').length;
 
   // Últimos 5 tickets ordenados por fecha de creación
   const recentTickets = [...tickets]

@@ -24,9 +24,11 @@ interface ModalDetalleTicketProps {
   onStatusChange: (ticketId: string, newStatus: Estado) => void;
   onAddComment: (ticketId: string, commentText: string) => void;
   onClose: () => void;
+  esSolicitante?: boolean;
+  puedeEliminar?: boolean;
 }
 
-const ORDEN_ESTADOS: Estado[] = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado'];
+const ORDEN_ESTADOS: Estado[] = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado', 'Inválido'];
 
 export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
   isOpen,
@@ -35,7 +37,9 @@ export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
   onDelete,
   onStatusChange,
   onAddComment,
-  onClose
+  onClose,
+  esSolicitante = false,
+  puedeEliminar = true
 }) => {
   const [newComment, setNewComment] = useState('');
 
@@ -43,7 +47,9 @@ export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
 
   // Solo se permite avanzar al siguiente estado (nunca regresar)
   const indiceActual = ORDEN_ESTADOS.indexOf(ticket.estado);
-  const estadosPermitidos = ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2);
+  const estadosPermitidos = ticket.estado === 'Inválido'
+    ? ['Inválido' as Estado]
+    : Array.from(new Set([...ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2), 'Inválido' as Estado]));
 
   const formatDate = (dateString: string) => {
     try {
@@ -89,22 +95,26 @@ export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
             <InsigniaEstado status={ticket.estado} size="md" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onEdit(ticket)}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Edit2 className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Editar</span>
-            </button>
-            <button
-              onClick={() => onDelete(ticket)}
-              className="px-3.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Eliminar</span>
-            </button>
-          </div>
+          {!esSolicitante && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onEdit(ticket)}
+                className="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Editar</span>
+              </button>
+              {puedeEliminar && (
+                <button
+                  onClick={() => onDelete(ticket)}
+                  className="px-3.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Eliminar</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Título y descripción */}
@@ -174,26 +184,40 @@ export const ModalDetalleTicket: React.FC<ModalDetalleTicketProps> = ({
             </p>
           </div>
 
-          {/* Cambiar estado rápido */}
+          {/* Estado */}
           <div className="space-y-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-700/60">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-              Cambiar Estado Directamente
+              Estado Actual
             </span>
-            <select
-              value={ticket.estado}
-              onChange={(e) => onStatusChange(ticket.id, e.target.value as Estado)}
-              className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold border border-slate-300 dark:border-slate-700 focus:border-indigo-500 outline-none"
-            >
-              {estadosPermitidos.map((estado) => (
-                <option key={estado} value={estado}>
-                  {estado}
-                </option>
-              ))}
-            </select>
-            {estadosPermitidos.length === 1 && (
-              <p className="text-[10px] text-slate-400 mt-1">
-                Estado terminal: no se puede retroceder.
-              </p>
+            {esSolicitante ? (
+              <div className="flex items-center gap-2 pt-1">
+                <InsigniaEstado status={ticket.estado} size="md" />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {ticket.estado}
+                </p>
+              </div>
+            ) : (
+              <>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block pb-1">
+                  Cambiar Estado Directamente
+                </span>
+                <select
+                  value={ticket.estado}
+                  onChange={(e) => onStatusChange(ticket.id, e.target.value as Estado)}
+                  className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold border border-slate-300 dark:border-slate-700 focus:border-indigo-500 outline-none"
+                >
+                  {estadosPermitidos.map((estado) => (
+                    <option key={estado} value={estado}>
+                      {estado}
+                    </option>
+                  ))}
+                </select>
+                {estadosPermitidos.length === 1 && (
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Estado terminal: no se puede retroceder.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>

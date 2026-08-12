@@ -203,6 +203,7 @@ export const VistaListaTickets: React.FC<VistaListaTicketsProps> = ({
               <option value="En progreso">Estado: En progreso</option>
               <option value="Resuelto">Estado: Resuelto</option>
               <option value="Cerrado">Estado: Cerrado</option>
+              <option value="Inválido">Estado: Inválido</option>
             </select>
           </div>
 

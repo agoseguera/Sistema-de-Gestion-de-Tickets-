@@ -84,10 +84,15 @@ export const InsigniaEstado: React.FC<InsigniaEstadoProps> = ({ status, size = '
           icon: <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
         };
       case 'Cerrado':
-      default:
         return {
           bg: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
           icon: <XCircle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+        };
+      case 'Inválido':
+      default:
+        return {
+          bg: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60',
+          icon: <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0" />
         };
     }
   };

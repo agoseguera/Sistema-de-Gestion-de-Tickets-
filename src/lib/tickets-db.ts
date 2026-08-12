@@ -9,9 +9,12 @@ export class TicketValidationError extends Error {
   }
 }
 
-export const ORDEN_ESTADOS = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado'];
+export const ORDEN_ESTADOS = ['Abierto', 'En progreso', 'Resuelto', 'Cerrado', 'Inválido'];
 
 export function validarTransicionEstado(actual: string, nuevo: string) {
+  // "Inválido" es un estado terminal que puede marcarse desde cualquier estado
+  if (nuevo === 'Inválido') return;
+
   const indiceActual = ORDEN_ESTADOS.indexOf(actual);
   const indiceNuevo = ORDEN_ESTADOS.indexOf(nuevo);
 

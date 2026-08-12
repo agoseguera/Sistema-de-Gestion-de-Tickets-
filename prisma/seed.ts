@@ -18,7 +18,7 @@ async function main() {
   }
 
   const estadosCreados: estado_ticket[] = [];
-  for (const nombre of ['Abierto', 'En progreso', 'Resuelto', 'Cerrado']) {
+  for (const nombre of ['Abierto', 'En progreso', 'Resuelto', 'Cerrado', 'Inválido']) {
     estadosCreados.push(await prisma.estado_ticket.create({ data: { nombre } }));
   }
 

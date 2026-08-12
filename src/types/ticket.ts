@@ -1,6 +1,6 @@
 export type Prioridad = 'Baja' | 'Media' | 'Alta' | 'Crítica';
 
-export type Estado = 'Abierto' | 'En progreso' | 'Resuelto' | 'Cerrado';
+export type Estado = 'Abierto' | 'En progreso' | 'Resuelto' | 'Cerrado' | 'Inválido';
 
 export type Categoria = 'Hardware' | 'Software' | 'Redes' | 'Accesos' | 'General';
 
