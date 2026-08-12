@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Ticket } from '@/types/ticket';
 import { prisma } from '@/lib/prisma';
 import { toFrontendTicket } from '@/lib/ticket-mapper';
-import { upsertPorNombre, findOrCreateSolicitante, findOrCreateResponsable } from '@/lib/tickets-db';
+import { upsertPorNombre, validarSolicitante, findOrCreateResponsable, TicketValidationError } from '@/lib/tickets-db';
 import { Prisma } from '@/generated/prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +45,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     if (body.emailSolicitante !== undefined || body.nombreSolicitante !== undefined) {
-      const solicitante = await findOrCreateSolicitante(body.nombreSolicitante, body.emailSolicitante);
+      const solicitante = await validarSolicitante(body.nombreSolicitante, body.emailSolicitante);
       data.id_solicitante = solicitante.id;
     }
     if (body.nombreAsignado !== undefined) {
@@ -87,6 +87,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(toFrontendTicket(updated));
   } catch (error) {
+    if (error instanceof TicketValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al actualizar el ticket' }, { status: 500 });
   }
 }

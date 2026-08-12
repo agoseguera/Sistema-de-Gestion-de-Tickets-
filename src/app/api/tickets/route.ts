@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Ticket } from '@/types/ticket';
 import { prisma } from '@/lib/prisma';
 import { toFrontendTicket } from '@/lib/ticket-mapper';
-import { createTicket } from '@/lib/tickets-db';
+import { createTicket, TicketValidationError } from '@/lib/tickets-db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
     const ticket = await createTicket(body);
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
+    if (error instanceof TicketValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error al crear ticket' }, { status: 500 });
   }
 }

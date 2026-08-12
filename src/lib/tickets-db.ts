@@ -2,6 +2,13 @@ import { prisma } from '@/lib/prisma';
 import { Ticket } from '@/types/ticket';
 import { toFrontendTicket } from '@/lib/ticket-mapper';
 
+export class TicketValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TicketValidationError';
+  }
+}
+
 function normalizarEmail(nombre: string, dominio: string): string {
   return nombre
     .toLowerCase()
@@ -24,24 +31,33 @@ export async function upsertPorNombre(
   return prisma.categorias.upsert({ where: { nombre }, update: {}, create: { nombre } });
 }
 
-export async function findOrCreateSolicitante(nombre: string | undefined, email: string | undefined) {
+export async function validarSolicitante(nombre: string | undefined, email: string | undefined) {
   const nombreLimpio = nombre?.trim();
   const emailLimpio = email?.trim();
 
-  if (emailLimpio) {
-    return prisma.usuarios.upsert({
-      where: { email: emailLimpio },
-      update: { nombre: nombreLimpio || undefined },
-      create: { nombre: nombreLimpio || emailLimpio, email: emailLimpio, rol: 'Solicitante' }
-    });
+  if (!emailLimpio) {
+    throw new TicketValidationError(
+      'El correo del solicitante es obligatorio y debe existir en la tabla de usuarios.'
+    );
   }
 
-  const correo = normalizarEmail(nombreLimpio || 'usuario', 'empresa.com');
-  return prisma.usuarios.upsert({
-    where: { email: correo },
-    update: {},
-    create: { nombre: nombreLimpio || correo, email: correo, rol: 'Solicitante' }
+  const usuario = await prisma.usuarios.findFirst({
+    where: { email: emailLimpio, activo: true }
   });
+
+  if (!usuario) {
+    throw new TicketValidationError(
+      `El correo "${emailLimpio}" no existe en la tabla de usuarios. Verifique los datos del solicitante.`
+    );
+  }
+
+  if (nombreLimpio && usuario.nombre.trim().toLowerCase() !== nombreLimpio.toLowerCase()) {
+    throw new TicketValidationError(
+      `El nombre "${nombreLimpio}" no coincide con el usuario registrado para el correo "${emailLimpio}".`
+    );
+  }
+
+  return usuario;
 }
 
 export async function findOrCreateResponsable(nombre: string | undefined) {
@@ -76,9 +92,9 @@ async function nextNumero(idPreferido?: string) {
 
 export async function createTicket(input: Partial<Ticket>): Promise<Ticket> {
   const prioridad = await upsertPorNombre('prioridades', input.prioridad || 'Media');
-  const estado = await upsertPorNombre('estado_ticket', input.estado || 'Abierto');
+  const estado = await upsertPorNombre('estado_ticket', 'Abierto');
   const categoria = await upsertPorNombre('categorias', input.categoria || 'General');
-  const solicitante = await findOrCreateSolicitante(input.nombreSolicitante, input.emailSolicitante);
+  const solicitante = await validarSolicitante(input.nombreSolicitante, input.emailSolicitante);
   const responsable = await findOrCreateResponsable(input.nombreAsignado);
   const numero = await nextNumero(input.id);
 

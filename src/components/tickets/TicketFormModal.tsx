@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, Prioridad, Estado, Categoria } from '../../types/ticket';
 import { X, Check, AlertCircle, Sparkles, User, Tag, FileText, Calendar, ShieldAlert } from 'lucide-react';
 
+interface UsuarioRegistrado {
+  nombre: string;
+  email: string;
+  rol: string;
+}
+
 interface ModalFormularioTicketProps {
   isOpen: boolean;
   ticketToEdit?: Ticket | null;
@@ -29,9 +35,19 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
   const [requesterName, setRequesterName] = useState<string>('');
   const [requesterEmail, setRequesterEmail] = useState<string>('');
   const [assignedName, setAssignedName] = useState<string>('');
+  const [usuarios, setUsuarios] = useState<UsuarioRegistrado[]>([]);
 
   // Estado de validación
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Carga los usuarios registrados para validar al solicitante y listar responsables de soporte
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch('/api/usuarios', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setUsuarios(Array.isArray(data) ? data : []))
+      .catch(() => setUsuarios([]));
+  }, [isOpen]);
 
   useEffect(() => {
     if (ticketToEdit) {
@@ -58,6 +74,10 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
     setErrors({});
   }, [ticketToEdit, nextId, isOpen]);
 
+  const soporteUsuarios = usuarios.filter(
+    (u) => u.rol.trim().toLowerCase() === 'soporte'
+  );
+
   if (!isOpen) return null;
 
   const validate = () => {
@@ -79,8 +99,29 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
       newErrors.nombreSolicitante = 'El nombre del usuario solicitante es obligatorio.';
     }
 
-    if (requesterEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requesterEmail.trim())) {
+    if (!requesterEmail.trim()) {
+      newErrors.emailSolicitante = 'El correo del usuario solicitante es obligatorio.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requesterEmail.trim())) {
       newErrors.emailSolicitante = 'Ingrese un formato de correo electrónico válido.';
+    }
+
+    // Solo al crear se valida que el solicitante exista en la tabla de usuarios
+    if (!isEditing) {
+      const usuario = usuarios.find(
+        (u) => u.email.trim().toLowerCase() === requesterEmail.trim().toLowerCase()
+      );
+
+      if (requesterEmail.trim() && !usuario) {
+        newErrors.emailSolicitante =
+          'El correo no existe en la tabla de usuarios. El ticket no puede crearse.';
+      } else if (
+        usuario &&
+        requesterName.trim() &&
+        usuario.nombre.trim().toLowerCase() !== requesterName.trim().toLowerCase()
+      ) {
+        newErrors.nombreSolicitante =
+          'El nombre no coincide con el usuario registrado para ese correo.';
+      }
     }
 
     setErrors(newErrors);
@@ -99,7 +140,7 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
       estado: status,
       categoria: category,
       nombreSolicitante: requesterName.trim(),
-      emailSolicitante: requesterEmail.trim() || `${requesterName.toLowerCase().replace(/\s+/g, '.')}@empresa.com`,
+      emailSolicitante: requesterEmail.trim(),
       nombreAsignado: assignedName.trim() || 'Sin asignar'
     });
   };
@@ -218,7 +259,7 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
             )}
           </div>
 
-          {/* Fila 4: Prioridad y Estado */}
+          {/* Fila 4: Prioridad */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
@@ -240,16 +281,27 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
                 Estado <span className="text-red-500">*</span>
               </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as Estado)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium"
-              >
-                <option value="Abierto">Abierto</option>
-                <option value="En progreso">En progreso</option>
-                <option value="Resuelto">Resuelto</option>
-                <option value="Cerrado">Cerrado</option>
-              </select>
+              {/* Al crear el estado queda fijado en "Abierto"; solo se puede modificar en tickets existentes */}
+              {isEditing ? (
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as Estado)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium"
+                >
+                  <option value="Abierto">Abierto</option>
+                  <option value="En progreso">En progreso</option>
+                  <option value="Resuelto">Resuelto</option>
+                  <option value="Cerrado">Cerrado</option>
+                </select>
+              ) : (
+                <select
+                  disabled
+                  value="Abierto"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono text-sm border border-slate-200 dark:border-slate-700 cursor-not-allowed font-bold"
+                >
+                  <option value="Abierto">Abierto</option>
+                </select>
+              )}
             </div>
           </div>
 
@@ -283,7 +335,7 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                Correo Electrónico (Opcional)
+                Correo Electrónico <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -319,10 +371,16 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
               className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
             >
               <option value="Sin asignar">Sin asignar</option>
-              <option value="Carlos Mendoza">Carlos Mendoza (Especialista Redes)</option>
-              <option value="Sofía Castro">Sofía Castro (Soporte Software)</option>
-              <option value="David Torres">David Torres (Administrador Sistemas)</option>
-              <option value="Administrador Soporte">Administrador Soporte</option>
+              {soporteUsuarios.map((usuario) => (
+                <option key={usuario.email} value={usuario.nombre}>
+                  {usuario.nombre} ({usuario.email})
+                </option>
+              ))}
+              {assignedName &&
+                assignedName !== 'Sin asignar' &&
+                !soporteUsuarios.some((u) => u.nombre === assignedName) && (
+                  <option value={assignedName}>{assignedName}</option>
+                )}
             </select>
           </div>
 
