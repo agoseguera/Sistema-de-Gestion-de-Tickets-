@@ -26,6 +26,10 @@ interface VistaListaTicketsProps {
   onEditTicket: (ticket: Ticket) => void;
   onDeleteTicket: (ticket: Ticket) => void;
   initialSearchQuery?: string;
+  esSolicitante?: boolean;
+  puedeEliminar?: boolean;
+  titulo?: string;
+  subtitulo?: string;
 }
 
 export const VistaListaTickets: React.FC<VistaListaTicketsProps> = ({
@@ -34,7 +38,11 @@ export const VistaListaTickets: React.FC<VistaListaTicketsProps> = ({
   onViewTicket,
   onEditTicket,
   onDeleteTicket,
-  initialSearchQuery = ''
+  initialSearchQuery = '',
+  esSolicitante = false,
+  puedeEliminar = true,
+  titulo = 'Tickets',
+  subtitulo = 'Administra y da seguimiento a las solicitudes de soporte.'
 }) => {
   // Estado de filtros y búsqueda
   const [filters, setFilters] = useState<EstadoFiltro>({
@@ -138,10 +146,10 @@ export const VistaListaTickets: React.FC<VistaListaTicketsProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Tickets
+            {titulo}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Administra y da seguimiento a las solicitudes de soporte.
+            {subtitulo}
           </p>
         </div>
 
@@ -358,20 +366,26 @@ export const VistaListaTickets: React.FC<VistaListaTicketsProps> = ({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => onEditTicket(ticket)}
-                            title="Editar ticket"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => onDeleteTicket(ticket)}
-                            title="Eliminar ticket"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {!esSolicitante && (
+                            <>
+                              <button
+                                onClick={() => onEditTicket(ticket)}
+                                title="Editar ticket"
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              {puedeEliminar && (
+                                <button
+                                  onClick={() => onDeleteTicket(ticket)}
+                                  title="Eliminar ticket"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

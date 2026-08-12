@@ -178,8 +178,9 @@ export const ModalFormularioUsuario: React.FC<ModalFormularioUsuarioProps> = ({
               }}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium"
             >
-              <option value="Solicitante">Solicitante</option>
+              <option value="Administrador">Administrador</option>
               <option value="Soporte">Soporte</option>
+              <option value="Solicitante">Solicitante</option>
             </select>
             {errors.rol && (
               <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">

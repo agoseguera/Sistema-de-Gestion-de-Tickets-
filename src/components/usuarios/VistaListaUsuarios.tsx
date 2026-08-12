@@ -185,7 +185,12 @@ export const VistaListaUsuarios: React.FC<VistaListaUsuariosProps> = ({
                         </div>
                       </td>
                       <td className="py-3.5 px-5 whitespace-nowrap">
-                        {usuario.rol.trim().toLowerCase() === 'soporte' ? (
+                        {usuario.rol.trim().toLowerCase() === 'administrador' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-xs font-semibold border border-violet-200/60 dark:border-violet-800/60">
+                            <UserCheck className="w-3 h-3" />
+                            Administrador
+                          </span>
+                        ) : usuario.rol.trim().toLowerCase() === 'soporte' ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200/60 dark:border-indigo-800/60">
                             <Headphones className="w-3 h-3" />
                             Soporte

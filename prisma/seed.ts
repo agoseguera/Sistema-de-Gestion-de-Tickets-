@@ -38,7 +38,8 @@ async function main() {
     { nombre: 'Ana Belén Silva', email: 'ana.silva@empresa.com', rol: 'Solicitante' },
     { nombre: 'Roberto Herrera', email: 'roberto.herrera@empresa.com', rol: 'Solicitante' },
     { nombre: 'David Torres', email: 'david.torres@soporte.com', rol: 'Soporte' },
-    { nombre: 'Laura Morales', email: 'laura.morales@empresa.com', rol: 'Solicitante' }
+    { nombre: 'Laura Morales', email: 'laura.morales@empresa.com', rol: 'Solicitante' },
+    { nombre: 'Carolina Ruiz', email: 'carolina.ruiz@admin.com', rol: 'Administrador' }
   ];
   const passwordHash = await bcrypt.hash('HelpDesk2026!', 10);
   for (const datos of datosUsuarios) {

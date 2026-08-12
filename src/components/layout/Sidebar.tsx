@@ -4,6 +4,21 @@ import { Usuario } from '../../types/usuario';
 
 export type VistaActiva = 'dashboard' | 'tickets' | 'usuarios';
 
+export const VISTAS_POR_ROL: Record<string, VistaActiva[]> = {
+  administrador: ['dashboard', 'tickets', 'usuarios'],
+  soporte: ['dashboard', 'tickets'],
+  solicitante: ['dashboard', 'tickets']
+};
+
+export function vistasPermitidas(rol?: string): VistaActiva[] {
+  const clave = (rol ?? '').trim().toLowerCase();
+  return VISTAS_POR_ROL[clave] ?? VISTAS_POR_ROL.solicitante;
+}
+
+export function puedeVer(rol: string | undefined, vista: VistaActiva): boolean {
+  return vistasPermitidas(rol).includes(vista);
+}
+
 interface BarraLateralProps {
   currentView: VistaActiva;
   onNavigate: (view: VistaActiva) => void;
@@ -55,7 +70,7 @@ export const BarraLateral: React.FC<BarraLateralProps> = ({
       icon: Users,
       badge: null
     }
-  ];
+  ].filter((item) => puedeVer(usuario?.rol, item.id as VistaActiva));
 
   return (
     <>

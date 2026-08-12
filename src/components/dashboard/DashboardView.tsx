@@ -1,5 +1,6 @@
 import React from 'react';
 import { Ticket } from '../../types/ticket';
+import { Usuario } from '../../types/usuario';
 import { InsigniaPrioridad, InsigniaEstado } from '../common/Badge';
 import {
   Inbox,
@@ -21,13 +22,15 @@ interface VistaPanelProps {
   onNavigateToTickets: () => void;
   onSelectTicket: (ticket: Ticket) => void;
   onNewTicket: () => void;
+  usuario: Usuario | null;
 }
 
 export const VistaPanel: React.FC<VistaPanelProps> = ({
   tickets,
   onNavigateToTickets,
   onSelectTicket,
-  onNewTicket
+  onNewTicket,
+  usuario
 }) => {
   // Calcula los conteos de resumen
   const total = tickets.length;
@@ -72,7 +75,7 @@ export const VistaPanel: React.FC<VistaPanelProps> = ({
               <span>Panel de Administración HelpDesk</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              ¡Bienvenido de nuevo, Administrador!
+              ¡Bienvenido de nuevo, {usuario?.nombre?.split(' ')[0] ?? 'Administrador'}!
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed">
               Supervisa el estado de las solicitudes de soporte en tiempo real. Tienes{' '}

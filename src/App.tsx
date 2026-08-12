@@ -13,7 +13,7 @@ import {
 import { fetchUsuarios, createUsuario, updateUsuario, deleteUsuario } from './utils/usuarioApi';
 import { loginUsuario } from './utils/authApi';
 import { LoginView } from './components/auth/LoginView';
-import { BarraLateral, VistaActiva } from './components/layout/Sidebar';
+import { BarraLateral, VistaActiva, vistasPermitidas } from './components/layout/Sidebar';
 import { Cabecera } from './components/layout/Header';
 import { VistaPanel } from './components/dashboard/DashboardView';
 import { VistaListaTickets } from './components/tickets/TicketListView';
@@ -26,8 +26,7 @@ import { ContenedorNotificaciones } from './components/common/Toast';
 
 const SESION_KEY = 'helpdesk_sesion';
 
-function obtenerSesionInicial(): Usuario | null {
-  if (typeof window === 'undefined') return null;
+function obtenerSesionAlmacenada(): Usuario | null {
   try {
     const raw = window.localStorage.getItem(SESION_KEY);
     if (!raw) return null;
@@ -40,8 +39,9 @@ function obtenerSesionInicial(): Usuario | null {
 }
 
 export default function App() {
-  // Estado de la sesión
-  const [usuario, setUsuario] = useState<Usuario | null>(() => obtenerSesionInicial());
+  // Estado de la sesión (se restaura tras la hidratación para evitar errores de SSR)
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [sesionRestaurada, setSesionRestaurada] = useState<boolean>(false);
 
   // Estado de datos de la aplicación
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -111,6 +111,12 @@ export default function App() {
       window.localStorage.removeItem(SESION_KEY);
     } catch {}
   };
+
+  // Restaura la sesión guardada después de la hidratación (evita errores de SSR)
+  useEffect(() => {
+    setUsuario(obtenerSesionAlmacenada());
+    setSesionRestaurada(true);
+  }, []);
 
   // Carga los tickets y usuarios desde la API al iniciar sesión
   useEffect(() => {
@@ -319,7 +325,7 @@ export default function App() {
       const now = new Date().toISOString();
       const newCommentObj = {
         id: 'c-' + Date.now(),
-        autor: 'Administrador Soporte',
+        autor: usuario?.nombre ?? 'Administrador Soporte',
         texto: commentText,
         fechaCreacion: now
       };
@@ -343,6 +349,15 @@ export default function App() {
   // Calcular conteos de tickets
   const openCount = tickets.filter((ticket) => ticket.estado === 'Abierto' || ticket.estado === 'En progreso').length;
 
+  // Pantalla de carga mientras se restaura la sesión
+  if (!sesionRestaurada) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-200 dark:border-slate-700 border-t-indigo-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   // Pantalla de inicio de sesión
   if (!usuario) {
     return <LoginView onLogin={handleLogin} />;
@@ -361,7 +376,8 @@ export default function App() {
       <BarraLateral
         currentView={currentView}
         onNavigate={(view) => {
-          setCurrentView(view);
+          const vistaSegura = vistasPermitidas(usuario?.rol).includes(view) ? view : 'dashboard';
+          setCurrentView(vistaSegura);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         openTicketCount={openCount}
@@ -397,6 +413,7 @@ export default function App() {
           {currentView === 'dashboard' ? (
             <VistaPanel
               tickets={tickets}
+              usuario={usuario}
               onNavigateToTickets={() => {
                 setCurrentView('tickets');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
