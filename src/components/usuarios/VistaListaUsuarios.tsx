@@ -154,7 +154,7 @@ export const VistaListaUsuarios: React.FC<VistaListaUsuariosProps> = ({
                   <tr>
                     <th className="py-3.5 px-5">Usuario</th>
                     <th className="py-3.5 px-5">Rol</th>
-                    <th className="py-3.5 px-5">Fecha de alta</th>
+                    <th className="py-3.5 px-5">Fecha</th>
                     <th className="py-3.5 px-5 text-center">Solicitados</th>
                     <th className="py-3.5 px-5 text-center">Asignados</th>
                     <th className="py-3.5 px-5 text-right">Acciones</th>

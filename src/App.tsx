@@ -404,7 +404,6 @@ export default function App() {
         isMobileMenuOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         usuario={usuario}
-        onLogout={handleLogout}
       />
 
       {/* Área de contenido principal */}
