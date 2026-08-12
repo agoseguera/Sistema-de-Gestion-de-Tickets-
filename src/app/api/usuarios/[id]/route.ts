@@ -74,6 +74,30 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   }
 }
 
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const { id } = await context.params;
+  const idNumerico = parseInt(id, 10);
+
+  if (isNaN(idNumerico)) {
+    return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+  }
+
+  try {
+    const result = await prisma.usuarios.updateMany({
+      where: { id: idNumerico, activo: true },
+      data: { activo: false }
+    });
+
+    if (result.count === 0) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Error al eliminar el usuario' }, { status: 500 });
+  }
+}
+
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   const idNumerico = parseInt(id, 10);
@@ -83,8 +107,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const usuario = await prisma.usuarios.findUnique({
-      where: { id: idNumerico },
+    const usuario = await prisma.usuarios.findFirst({
+      where: { id: idNumerico, activo: true },
       include: {
         _count: {
           select: {

@@ -8,6 +8,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     const usuarios = await prisma.usuarios.findMany({
+      where: { activo: true },
       include: {
         _count: {
           select: {

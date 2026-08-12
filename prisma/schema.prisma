@@ -20,6 +20,7 @@ model usuarios {
   email          String   @unique
   rol            String
   fecha_creacion DateTime @default(now())
+  activo         Boolean  @default(true)
 
   tickets_solicitante  ticket[] @relation("Solicitante")
   tickets_responsable  ticket[] @relation("Responsable")
