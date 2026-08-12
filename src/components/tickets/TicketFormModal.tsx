@@ -84,6 +84,28 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
   const indiceActual = ORDEN_ESTADOS.indexOf(status);
   const estadosPermitidos = ORDEN_ESTADOS.slice(indiceActual, indiceActual + 2);
 
+  // Lista de solicitantes: usuarios activos + el actual del ticket si ya no está activo
+  const solicitantesSeleccion = (() => {
+    const lista = [...usuarios];
+    const yaExiste = lista.some(
+      (u) => u.email.trim().toLowerCase() === requesterEmail.trim().toLowerCase()
+    );
+    if (requesterEmail.trim() && !yaExiste) {
+      lista.push({ nombre: requesterName.trim(), email: requesterEmail.trim(), rol: '' });
+    }
+    return lista;
+  })();
+
+  // Al elegir un nombre o correo, se rellena el otro automáticamente
+  const handleSeleccionarSolicitante = (email: string) => {
+    const usuario = usuarios.find((u) => u.email === email);
+    if (usuario) {
+      setRequesterName(usuario.nombre);
+      setRequesterEmail(usuario.email);
+    }
+    setErrors((prev) => ({ ...prev, nombreSolicitante: '', emailSolicitante: '' }));
+  };
+
   if (!isOpen) return null;
 
   const validate = () => {
@@ -318,20 +340,29 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
                 Usuario Solicitante <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="Nombre completo"
-                value={requesterName}
-                onChange={(e) => {
-                  setRequesterName(e.target.value);
-                  if (errors.nombreSolicitante) setErrors({ ...errors, nombreSolicitante: '' });
-                }}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border ${
-                  errors.nombreSolicitante
-                    ? 'border-red-500 focus:ring-red-500/20'
-                    : 'border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                } focus:ring-2 outline-none transition-all`}
-              />
+              <select
+                disabled={isEditing}
+                value={requesterEmail}
+                onChange={(e) => handleSeleccionarSolicitante(e.target.value)}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:ring-2 outline-none transition-all ${
+                  isEditing
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed font-bold'
+                    : `bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border ${
+                        errors.nombreSolicitante
+                          ? 'border-red-500 focus:ring-red-500/20'
+                          : 'border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      }`
+                }`}
+              >
+                <option value="" disabled>
+                  {isEditing ? 'Solicitante (no editable)' : 'Seleccionar usuario...'}
+                </option>
+                {solicitantesSeleccion.map((usuario) => (
+                  <option key={usuario.email} value={usuario.email}>
+                    {usuario.nombre}
+                  </option>
+                ))}
+              </select>
               {errors.nombreSolicitante && (
                 <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5" />
@@ -344,20 +375,29 @@ export const ModalFormularioTicket: React.FC<ModalFormularioTicketProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
                 Correo Electrónico <span className="text-red-500">*</span>
               </label>
-              <input
-                type="email"
-                placeholder="correo@empresa.com"
+              <select
+                disabled={isEditing}
                 value={requesterEmail}
-                onChange={(e) => {
-                  setRequesterEmail(e.target.value);
-                  if (errors.emailSolicitante) setErrors({ ...errors, emailSolicitante: '' });
-                }}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm border ${
-                  errors.emailSolicitante
-                    ? 'border-red-500 focus:ring-red-500/20'
-                    : 'border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                } focus:ring-2 outline-none transition-all`}
-              />
+                onChange={(e) => handleSeleccionarSolicitante(e.target.value)}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border focus:ring-2 outline-none transition-all ${
+                  isEditing
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed font-bold'
+                    : `bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border ${
+                        errors.emailSolicitante
+                          ? 'border-red-500 focus:ring-red-500/20'
+                          : 'border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      }`
+                }`}
+              >
+                <option value="" disabled>
+                  {isEditing ? 'Correo (no editable)' : 'Seleccionar correo...'}
+                </option>
+                {solicitantesSeleccion.map((usuario) => (
+                  <option key={usuario.email} value={usuario.email}>
+                    {usuario.email}
+                  </option>
+                ))}
+              </select>
               {errors.emailSolicitante && (
                 <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5" />
